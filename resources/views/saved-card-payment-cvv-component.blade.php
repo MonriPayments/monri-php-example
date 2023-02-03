@@ -9,20 +9,24 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
     <script src="https://ipgtest.monri.com/dist/components.js"></script>
 </head>
 <body class="antialiased">
-<div id="payment-component-element"></div>
+<ul>
+    @foreach($paymentMethods as $paymentMethod)
+        <li id="{{$paymentMethod->getId()}}" onclick="selectPaymentMethod(this)">maskedPan: {{$paymentMethod->getMaskedPan()}}</li>
+    @endforeach
+</ul>
+<div id="cvv-component-element"></div>
 <div id="card-errors"></div>
 <input type="button" name="button" id="pay-btn" value="Pay">
 <script>
     var monri = Monri('{{$authenticityToken}}');
     var components = monri.components({"clientSecret": '{{$clientSecret}}'});
     // Create an instance of the card Component.
-    var paymentComponent = components.create('payment', {});
-    // Add an instance of the card Component into the `card-element` <div>.
-    paymentComponent.mount('payment-component-element');
-    paymentComponent.setActivePaymentMethod("{{$token}}")
+    var cvvComponent = components.create('cvv', {});
+    cvvComponent.mount('cvv-component-element');
     document.getElementById('pay-btn').addEventListener('click', function () {
         const transactionParams = {
             address: "Adresa",
@@ -35,7 +39,7 @@
             orderInfo: "Confirm payment with token"
         }
 
-        monri.confirmPayment(paymentComponent, transactionParams).then(result => {
+        monri.confirmPayment(cvvComponent, transactionParams).then(result => {
             if (result.error) {
                 // Inform the customer that there was an error.
                 var errorElement = document.getElementById('card-errors');
@@ -50,6 +54,11 @@
             }
         })
     })
+
+    function selectPaymentMethod(e) {
+        cvvComponent.setActivePaymentMethod(e.getAttribute('id'))
+    }
+
 </script>
 </body>
 </html>

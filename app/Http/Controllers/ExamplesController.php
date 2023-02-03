@@ -4,27 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Monri\Exception\MonriException;
 
 class ExamplesController extends BaseController
 {
 
+    /**
+     * @throws MonriException
+     * @throws \Exception
+     */
     function createAndConfirmPayment()
     {
         $client = $this->setupMonri();
-        $customer = $client->customers()->create(
-            [
-                'email' => 'test-php-sdk@monri.com',
-                'name' => 'Name',
-                'merchant_customer_id' => 'test-php-sdk-monri-com'
-            ]
-        );
+        $customer = $client->customers()->findByMerchantId('test-php-sdk-monri-com');
         $params = [
             'order_number' => "" . random_int(100000, 999999),
             'currency' => 'EUR',
             'amount' => 1000,
             'transaction_type' => 'purchase',
-            'customer_uuid' => $customer->getId(),
-            'merchant_customer_uuid' => 'test-php-sdk-monri-com'
+            'customer_uuid' => $customer->getId()
         ];
         $createResponse = $client->payments()->create($params);
         return view('create-and-confirm-payment', [
@@ -33,6 +31,9 @@ class ExamplesController extends BaseController
         ]);
     }
 
+    /**
+     * @throws MonriException
+     */
     function confirmPaymentWithToken(Request $request)
     {
         $client = $this->setupMonri();
@@ -43,10 +44,20 @@ class ExamplesController extends BaseController
         ]);
     }
 
+    /**
+     * @throws MonriException
+     * @throws \Exception
+     */
     function confirmPayment()
     {
         $client = $this->setupMonri();
-        $createResponse = $client->payments()->create(['order_number' => "" . random_int(100000, 999999), 'currency' => 'EUR', 'amount' => 1000, 'transaction_type' => 'purchase']);
+        $params = [
+            'order_number' => "" . random_int(100000, 999999),
+            'currency' => 'EUR',
+            'amount' => 1000,
+            'transaction_type' => 'purchase'
+        ];
+        $createResponse = $client->payments()->create($params);
         return view(
             'confirm-payment',
             [
@@ -56,12 +67,41 @@ class ExamplesController extends BaseController
         );
     }
 
+    /**
+     * @throws MonriException
+     * @throws \Exception
+     */
+    function savedCardPaymentCvvComponent()
+    {
+        $client = $this->setupMonri();
+        $params = [
+            'order_number' => "" . random_int(100000, 999999),
+            'currency' => 'EUR',
+            'amount' => 1000,
+            'transaction_type' => 'purchase'
+        ];
+        $createResponse = $client->payments()->create($params);
+        $customer = $client->customers()->findByMerchantId('test-php-sdk-monri-com');
+        $paymentMethods = $client->customers()->customer($customer->getId())->paymentMethods();
+        return view(
+            'saved-card-payment-cvv-component',
+            [
+                'authenticityToken' => $client->getAuthenticityToken(),
+                'clientSecret' => $createResponse->getClientSecret(),
+                'paymentMethods' => $paymentMethods->getData()
+            ]
+        );
+    }
+
+    /**
+     * @throws MonriException
+     */
     function customer(Request $request)
     {
         $client = $this->setupMonri();
         $id = $request->route('id');
-        $customer = $client->customers()->find($id);
-        $paymentMethods = $client->customers()->paymentMethods($id);
+        $customer = $client->customers()->findByMerchantId($id);
+        $paymentMethods = $client->customers()->customer($customer->getId())->paymentMethods();
         return view(
             'customer',
             [
@@ -71,6 +111,9 @@ class ExamplesController extends BaseController
         );
     }
 
+    /**
+     * @throws MonriException
+     */
     private function setupMonri(): \Monri\Client
     {
         $config = new \Monri\Config();

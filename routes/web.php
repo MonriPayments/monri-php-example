@@ -22,4 +22,5 @@ Route::controller(\App\Http\Controllers\ExamplesController::class)->group(functi
     Route::get('/create-and-confirm-payment', 'createAndConfirmPayment');
     Route::post('/confirm-payment-with-token', 'confirmPaymentWithToken');
     Route::get('/customer/{id}', 'customer');
+    Route::get('/saved-card-payment-cvv-component', 'savedCardPaymentCvvComponent');
 });
